@@ -1,31 +1,32 @@
 module.exports.config = {
- name: "tag",
- version: "1.0.0",
- hasPermssion: 2,
- credits: "Shahadat Islam",
- description: "Group এ সবাইকে নির্দিষ্ট সংখ্যায় মেনশন পাঠানো",
- commandCategory: "group",
- usages: "/tag [everyone]",
- cooldowns: 2
+  name: "tag",
+  version: "1.0.0",
+  hasPermssion: 0,
+  credits: "NK Naiem Khan",
+  description: "Auto mention multiple times",
+  commandCategory: "group",
+  usages: "tag @mention <number>",
+  cooldowns: 2
 };
 
-module.exports.run = async ({ api, event, args }) => {
- const threadID = event.threadID;
- const threadInfo = await api.getThreadInfo(threadID);
- const memberIDs = threadInfo.participantIDs;
+module.exports.run = async function({ api, event, args }) {
+  if (!event.mentions || Object.keys(event.mentions).length === 0) {
+    return api.sendMessage("❌ প্রথমে একজনকে mention দিন।", event.threadID, event.messageID);
+  }
 
- const repeatCount = parseInt(args[0]) || 1;
+  let mentionID = Object.keys(event.mentions)[0];
+  let mentionName = event.mentions[mentionID];
+  let times = parseInt(args[args.length - 1]); // শেষ আর্গুমেন্ট সংখ্যা ধরে নিলাম
 
- const mentions = memberIDs
- .filter(id => id != api.getCurrentUserID())
- .map(id => ({ tag: "@everyone", id }));
+  if (isNaN(times) || times <= 0) {
+    return api.sendMessage("❌ সঠিক সংখ্যা লিখুন।\n👉 উদাহরণ: tag @user 5", event.threadID, event.messageID);
+  }
 
- for (let i = 0; i < repeatCount; i++) {
- await api.sendMessage({
- body: `📢 @everyone\nসবাই চিপা থেকে বের হও 🐸`,
- mentions
- }, threadID);
+  let mentions = [];
+  for (let i = 0; i < times; i++) {
+    mentions.push({ id: mentionID, tag: mentionName });
+  }
 
- await new Promise(resolve => setTimeout(resolve, 2000)); 
- }
+  let msg = mentions.map(m => m.tag).join(" ");
+  api.sendMessage({ body: msg, mentions }, event.threadID);
 };
